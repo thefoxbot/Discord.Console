@@ -23,6 +23,8 @@
             token = account.token
         } else {
             console.log("Creating new account!")
+            token = await input.text("Token (ONLY USED TO LOGIN, won't share anywhere)")
+            account = {"token":token}
         }
      }
  console.log("Logging in...")
@@ -60,7 +62,8 @@
  bot.on("ready", ready)
 
  async function mainMenu() {
-    var option = await input.select("Discord.Console "+version+" Main Menu", ["Go to chat!","DMs","Switch account","Quit"])
+     console.clear()
+    var option = await input.select("Discord.Console "+version+" Main Menu", ["Go to chat!","DMs","Switch account","Account options","Quit"])
     switch(option) {
         case "Go to chat!":
         selectChannel()
@@ -81,22 +84,26 @@
  }
 
  async function selectChannel() {
+     console.clear()
      console.log(bot.guilds.map(ch=>"\n"+ch.id+" - "+ch.name))
      var guildId = await input.text("Write the Guild ID here to select the guild you want to chat in, or type -skip to skip to the channel id selection. Type -quit to quit. Type -user to chat with a user instead!")
      if(guildId === "-skip") {
         var channelId = await input.text("Write the Channel ID here.")
-        if(bot.channels.get(channelId) === undefined) {
+         if(bot.channels.get(channelId) === undefined) {
             console.log("Wrong channel ID, restarting process")
             selectChannel()
-        } else if(guildId === "-quit") {
-            console.log("Returning to main menu...")
-            mainMenu()
         } else {
             console.log("Selected #"+bot.channels.get(channelId).name+"! Getting ready to chat..")
             chat(channelId)
         }
      } else {
-        if(bot.guilds.get(guildId) === undefined) {
+        if(guildId === "-quit") {
+            console.log("Returning to main menu...")
+            mainMenu()
+        } else if(guildId === "-user") {
+            console.log("Time for user search!")
+            selectUser()
+        } else if(bot.guilds.get(guildId) === undefined) {
             console.log("Wrong guild ID, restarting process")
             selectChannel()
         } else {
@@ -114,6 +121,7 @@
  }
 
  async function selectUser() {
+     console.clear()
      var userSearch = await input.text("Write the user and/or discriminator to search for. -quit to quit, -channel to chat in channels/guilds.")
      if(userSearch === "-quit") {
          mainMenu()
@@ -134,6 +142,7 @@
  }
 
  async function chat(channel) {
+     console.clear()
      chatchannelDefined = true
      userchannel = {"id":null}
      chatchannel = bot.channels.get(channel)
@@ -153,6 +162,7 @@
  }
 
  async function userChat(user) {
+     console.clear()
     chatchannelDefined = true
     userchannel = bot.users.get(user)
     chatchannel = null
