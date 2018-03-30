@@ -5,9 +5,10 @@
  var fs = require("fs")
  let token
  var chatchannelDefined
- var version = "Alpha v0.3"
+ var version = "Alpha v0.4"
 
  async function auth() {
+     console.clear()
      if(accounts.length===0) {
         console.log("No accounts present, creating a new one")
         token = await input.text("Token (ONLY USED TO LOGIN, won't share anywhere)")
@@ -34,7 +35,6 @@
  async function ready() {
     console.log("Logged in!")
     //This is the code that you want to look for!
-
     if(!bot.user.bot) {
         console.log("I'm sorry, but you aren't a bot! Here theres only bots allowed.\nIf you want more info, read the official discord TOS. It is stated that you cannot modify and/or make a new client. This does not count for bots, though.\nIf you still wish to break the TOS and use the client as a normal user, read the \"How to login as a user\" section in the GitHub wiki.")
         exit()
@@ -63,7 +63,7 @@
 
  async function mainMenu() {
      console.clear()
-    var option = await input.select("Discord.Console "+version+" Main Menu", ["Go to chat!","DMs","Switch account","Account options","Quit"])
+    var option = await input.select("Discord.Console "+version+" Main Menu", ["Go to chat!","DMs","Switch account","Quit"])
     switch(option) {
         case "Go to chat!":
         selectChannel()
@@ -72,6 +72,7 @@
         selectUser()
         break;
         case "Switch account":
+        bot.destroy()
         auth()
         break;
         case "Account options":
@@ -85,9 +86,13 @@
 
  async function selectChannel() {
      console.clear()
-     console.log(bot.guilds.map(ch=>"\n"+ch.id+" - "+ch.name))
-     var guildId = await input.text("Write the Guild ID here to select the guild you want to chat in, or type -skip to skip to the channel id selection. Type -quit to quit. Type -user to chat with a user instead!")
-     if(guildId === "-skip") {
+     var guildsmap = ["Switch to User search","Skip to channel ID","Search","Quit"]
+     bot.guilds.map(ch=>ch.name+" - "+ch.id).forEach(function(element){
+        guildsmap.push(element)
+     })
+     var guildId = await input.select("What guild do you want to look for channels in?", guildsmap)
+     switch(guildId) {
+         case "Skip to channel ID":
         var channelId = await input.text("Write the Channel ID here.")
          if(bot.channels.get(channelId) === undefined) {
             console.log("Wrong channel ID, restarting process")
@@ -96,50 +101,80 @@
             console.log("Selected #"+bot.channels.get(channelId).name+"! Getting ready to chat..")
             chat(channelId)
         }
-     } else {
-        if(guildId === "-quit") {
+        break;
+        case "Quit":
             console.log("Returning to main menu...")
             mainMenu()
-        } else if(guildId === "-user") {
+            break;
+        case "Switch to User search":
             console.log("Time for user search!")
             selectUser()
-        } else if(bot.guilds.get(guildId) === undefined) {
-            console.log("Wrong guild ID, restarting process")
-            selectChannel()
-        } else {
-            console.log(bot.guilds.get(guildId).channels.map(ch=>ch.id+" - "+ch.name))
-            var channelId = await input.text("Write the Channel ID here. Write -startover to pick a different guild.")
-            if(bot.channels.get(channelId) === undefined) {
-                console.log("Wrong channel ID, restarting process")
+            break;
+        default:
+        if(guildId === "Search") {        
+        var guildSearch = await input.text("Write the guild name/id to search for. -startover to start over.")
+                if(guildSearch === "-startover") {
+                    selectChannel()
+                } else {
+                    var guildSearchList = bot.guilds.array().filter(g=>(g.name+g.id).toLowerCase().includes(guildSearch.toLowerCase()))
+                    var guildId = ["Start over"]
+                    guildSearchList.map(g=>g.name+" - "+g.id).forEach(function(element){
+                        guildId.push(element)
+                    })
+                    var guildId = await input.select("Which search result?", guildId)
+                }
+            }
+        
+            
+            guildId = bot.guilds.find(function(element) {
+                return element.name+" - "+element.id === guildId
+            })
+            
+            var channelmap = ["Start over"]
+            guildId.channels.filter(ch=>ch.type === "text").map(ch=>ch.name+" - "+ch.id).forEach(function(element){channelmap.push(element)})
+            var channelId = await input.select("Select the channel.",channelmap)
+            if(channelId === "Start over") {
                 selectChannel()
             } else {
-                console.log("Selected #"+bot.channels.get(channelId).name+"! Getting ready to chat..")
-                chat(channelId)
+                channelId = bot.channels.find(function(element) {
+                    return element.name+" - "+element.id === channelId
+                })
+                console.log("Selected #"+channelId.name+"! Getting ready to chat..")
+                chat(channelId.id)
+            }
             }
         }
-     }
- }
 
  async function selectUser() {
      console.clear()
      var userSearch = await input.text("Write the user and/or discriminator to search for. -quit to quit, -channel to chat in channels/guilds.")
-     if(userSearch === "-quit") {
-         mainMenu()
-     } else if(userSearch === "-channel") {
-         selectChannel()
-     } else {
+     switch(userSearch) {
+         case "-quit":
+             mainMenu()
+             break;
+         case "-channel":
+             selectChannel()
+             break;
+         default:
      var usersSearchList = bot.users.array().filter(u=>(u.username+"#"+u.discriminator).toLowerCase().includes(userSearch.toLowerCase()))
-     console.log(usersSearchList.map(u=>u.username+"#"+u.discriminator+" - "+u.id))
-     var userId = await input.text("Get the ID of the user you want to chat with. -startover to start the search over.")
-     if(bot.users.get(userId)===undefined) {
-         console.log("User not found. Restarting...")
-         selectUser()
-     } else {
-         console.log("User found! Getting ready to chat...")
-         userChat(userId)
-     }
-     }
+     var usersSearchList2 = usersSearchList.map(u=>u.username+"#"+u.discriminator)
+     usersSearchList2.push("Search again!")
+     usersSearchList2.push("Quit")
+     var userId = await input.select("Who do you want to chat with?", usersSearchList2)
+     switch(userId) {
+         case "Search again!":
+            selectUser()
+            break;
+         case "Quit":
+            mainMenu()
+         default:
+             userId = bot.users.find(function(element) {
+                 return element.username+"#"+element.discriminator === userId
+             })
+        userChat(userId.id)
+    }
  }
+}
 
  async function chat(channel) {
      console.clear()
