@@ -5,7 +5,7 @@
  var fs = require("fs")
  let token
  var chatchannelDefined
- var version = "Alpha v0.4"
+ var version = "Alpha v0.41"
 
  async function auth() {
      console.clear()
@@ -35,10 +35,10 @@
  async function ready() {
     console.log("Logged in!")
     //This is the code that you want to look for!
-    if(!bot.user.bot) {
+    /*if(!bot.user.bot) {
         console.log("I'm sorry, but you aren't a bot! Here theres only bots allowed.\nIf you want more info, read the official discord TOS. It is stated that you cannot modify and/or make a new client. This does not count for bots, though.\nIf you still wish to break the TOS and use the client as a normal user, read the \"How to login as a user\" section in the GitHub wiki.")
-        exit()
-    }
+        process.exit()
+    }*/
 
    
     if(account["username"] === undefined) {
@@ -63,6 +63,7 @@
 
  async function mainMenu() {
      console.clear()
+     console.log("Logged in as "+account.username+"#"+account.discrim)
     var option = await input.select("Discord.Console "+version+" Main Menu", ["Go to chat!","DMs","Switch account","Quit"])
     switch(option) {
         case "Go to chat!":
@@ -79,7 +80,7 @@
         accOptions()
         break;
         case "Quit":
-        exit()
+        process.exit()
         break;
     }
  }
@@ -146,7 +147,6 @@
         }
 
  async function selectUser() {
-     console.clear()
      var userSearch = await input.text("Write the user and/or discriminator to search for. -quit to quit, -channel to chat in channels/guilds.")
      switch(userSearch) {
          case "-quit":
@@ -176,17 +176,21 @@
  }
 }
 
+//The chatting process itself (channels)
  async function chat(channel) {
      console.clear()
      chatchannelDefined = true
      userchannel = {"id":null}
      chatchannel = bot.channels.get(channel)
+     console.log("Making new listener...")
+     bot.on("message", msg => {handleChan(msg)})
      console.log("We got it, listening to channel #"+chatchannel.name+"\nType -quit to select a different channel")
      while(true) {
      var message = await input.text(">")
      if(message === "-quit") {
+       console.log("Quitting...")
+         bot.listeners("message").forEach(function(list) {bot.removeListener("message", list)})
          chatchannel = undefined
-         console.log("Quitting...")
          selectChannel()
          break;
      } else {
@@ -196,17 +200,21 @@
      
  }
 
+//DMs
  async function userChat(user) {
-     console.clear()
+    console.clear()
     chatchannelDefined = true
     userchannel = bot.users.get(user)
     chatchannel = null
+    console.log("Making new listener...")
+    bot.on("message", msg => {handleDM(msg)})
     console.log("We got it, listening to messages from user "+userchannel.username+"#"+userchannel.discriminator+"\nType -quit to select a different user/channel")
     while(true) {
     var message = await input.text(">")
     if(message === "-quit") {
-        userchannel = undefined
         console.log("Quitting...")
+        bot.listeners("message").forEach(function(list) {bot.removeListener("message", list)})
+        userchannel = undefined
         selectUser()
         break;
     } else {
@@ -216,40 +224,44 @@
     
 }
 
- function exit() {
-     console.log("See you next time!")
-     bot.destroy()
-     process.exit()
- }
-
- bot.on("message", msg => {
-     if(chatchannelDefined) {
-         if(msg.channel.type === "dm") {
-             if(msg.author.id === userchannel.id) {
-                 if(!bot.user.bot) {
-                     msg.acknowledge()
-                 }
-                 if(msg.author.bot) {
-                     var botTag = " [BOT]"
-                 } else {
-                     var botTag = ""
-                 }
-                 console.log("\n> DM "+msg.author.username+"#"+msg.author.discriminator+botTag+": "+msg.content)
-             }
-         } else {
-             if(msg.channel === chatchannel && msg.author.id !== bot.user.id) {
-                 if(!bot.user.bot) {
-                     msg.acknowledge()
-                 }
-                 if(msg.author.bot) {
-                     var botTag = " [BOT]"
-                 } else {
-                     var botTag = ""
-                 }
-                 console.log("\n> "+msg.author.username+"#"+msg.author.discriminator+botTag+": "+msg.content)
-             }
-         }
+//Handling DM and Channel messages. In functions to waste less CPU when selecting channel/DM
+async function handleDM(msg) {
+  if(msg.channel.type === "dm") {
+    if(msg.author.id === userchannel.id) {
+      if(!bot.user.bot) {
+         msg.acknowledge()
+      }
+      if(msg.author.bot) {
+         var botTag = " [BOT]"
+      } else {
+         var botTag = ""
+       }
+      console.log("\n> DM "+msg.author.username+"#"+msg.author.discriminator+botTag+": "+msg.content)
     }
+  }
+}
+async function handleChan(msg) {
+  if(msg.channel.type === "text") {
+    if(msg.channel === chatchannel && msg.author.id !== bot.user.id) {
+      if(!bot.user.bot) {
+         msg.acknowledge()
+     }
+     if(msg.author.bot) {
+         var botTag = " [BOT]"
+      } else {
+         var botTag = ""
+     }
+      console.log("\n> "+msg.author.username+"#"+msg.author.discriminator+botTag+": "+msg.content)
+    }
+  }
+}
+
+//exit message
+ process.on('exit', (code) => {
+   if(code === 0) {
+     bot.destroy()
+     console.log("See you next time!")
+   }
  })
 
  auth()
