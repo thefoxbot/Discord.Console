@@ -35,10 +35,10 @@
  async function ready() {
     console.log("Logged in!")
     //This is the code that you want to look for!
-    /*if(!bot.user.bot) {
+    if(!bot.user.bot) {
         console.log("I'm sorry, but you aren't a bot! Here theres only bots allowed.\nIf you want more info, read the official discord TOS. It is stated that you cannot modify and/or make a new client. This does not count for bots, though.\nIf you still wish to break the TOS and use the client as a normal user, read the \"How to login as a user\" section in the GitHub wiki.")
         process.exit()
-    }*/
+    }
 
    
     if(account["username"] === undefined) {
