@@ -5,7 +5,7 @@
  var fs = require("fs");
  let token;
  var chatchannelDefined;
- var version = "Alpha v0.5";
+ var version = "Alpha v0.51";
 
 
 
@@ -207,7 +207,7 @@
      console.log("Making new listener...")
      bot.on("message", msg => {handleChan(msg)})
      console.log("We got it, listening to channel #"+chatchannel.name+"\nType -quit to select a different channel")
-     chatchannel.fetchMessages({ limit: 10 })
+     await chatchannel.fetchMessages({ limit: 10 })
       .then(messages => console.log(messages.map(m=>"! > "+m.author.username+m.author.discriminator+": "+m.content).reverse().forEach(function(message) {console.log(message)})))
       .catch(console.error);
      while(true) {
@@ -234,7 +234,10 @@
     console.log("Making new listener...")
     bot.on("message", msg => {handleDM(msg)})
     console.log("We got it, listening to messages from user "+userchannel.username+"#"+userchannel.discriminator+"\nType -quit to select a different user/channel")
-    while(true) {
+    await chatchannel.fetchMessages({ limit: 10 })
+      .then(messages => console.log(messages.map(m=>"! > DM "+m.author.username+m.author.discriminator+": "+m.content).reverse().forEach(function(message) {console.log(message)})))
+      .catch(console.error);
+	while(true) {
     var message = await input.text(">")
     if(message === "-quit") {
         console.log("Quitting...")
